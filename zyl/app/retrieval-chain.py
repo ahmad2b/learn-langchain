@@ -54,7 +54,7 @@ def create_chain(vectorStore):
         prompt=prompt,
     )
 
-    retriever = vectorStore.as_retriever()
+    retriever = vectorStore.as_retriever(search_kwargs={"k": 1})
     retrieval_chain = create_retrieval_chain(retriever, chain)
 
     return retrieval_chain
