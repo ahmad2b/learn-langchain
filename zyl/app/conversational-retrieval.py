@@ -13,6 +13,7 @@ from langchain.chains import create_retrieval_chain
 
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import MessagesPlaceholder
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
 
 
 def get_documents_from_web(url):
@@ -51,13 +52,32 @@ def create_chain(vectorStore):
         ]
     )
 
+    retriever_prompt = ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{input}"),
+            (
+                "human",
+                "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation.",
+            ),
+        ]
+    )
+
     chain = create_stuff_documents_chain(
         llm=model,
         prompt=prompt,
     )
 
     retriever = vectorStore.as_retriever(search_kwargs={"k": 3})
-    retrieval_chain = create_retrieval_chain(retriever, chain)
+    history_aware_retriever = create_history_aware_retriever(
+        llm=model, retriever=retriever, prompt=retriever_prompt
+    )
+
+    retrieval_chain = create_retrieval_chain(
+        # retriever,
+        history_aware_retriever,
+        chain,
+    )
 
     return retrieval_chain
 
